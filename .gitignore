@@ -44,3 +44,4 @@ bin/
 /.idea/misc.xml
 /.idea/vcs.xml
 /.run/desktop.run.xml
+/shell/.run/desktop.run.xml
