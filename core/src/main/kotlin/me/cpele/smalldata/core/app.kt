@@ -1,7 +1,9 @@
 package me.cpele.smalldata.core
 
 object App {
-    data class Model(val query: String? = null, val results: List<String>? = null)
+    data class Model(val query: String? = null, val results: List<String>? = null) {
+        companion object
+    }
 
     data class View(val query: UiModel.TextField, val results: List<UiModel.TextLabel>)
 
@@ -10,6 +12,8 @@ object App {
         data class ReceivedResults(val results: List<Obsidian.Finding>) : Event
     }
 }
+
+fun App.Model.Companion.init(): App.Model = TODO("Not yet implemented")
 
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View {
     val actualQuery = query ?: ""
