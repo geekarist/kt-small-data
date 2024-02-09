@@ -21,6 +21,8 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     implementation(project(":core"))
+    implementation("org.oolong-kt:oolong:2.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:+")
 }
 
 compose.desktop {

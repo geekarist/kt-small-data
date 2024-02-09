@@ -13,7 +13,7 @@ object App {
     }
 }
 
-fun App.Model.Companion.init(): App.Model = TODO("Not yet implemented")
+fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model())
 
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View {
     val actualQuery = query ?: ""
