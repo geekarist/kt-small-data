@@ -1,12 +1,6 @@
 package me.cpele.smalldata.core
 
 interface UiModel {
-    class TextField(val text: String, function: () -> Unit) {
-
-    }
-
-    class TextLabel(val text: String) {
-
-    }
-
+    data class TextField(val text: String, val onTextChanged: (String) -> Unit)
+    data class TextLabel(val text: String)
 }

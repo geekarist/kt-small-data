@@ -18,8 +18,8 @@ fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model(
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View {
     val actualQuery = query ?: ""
     return App.View(
-        UiModel.TextField(actualQuery) {
-            dispatch(App.Event.QueryChanged(actualQuery))
+        UiModel.TextField(actualQuery) { newQuery ->
+            dispatch(App.Event.QueryChanged(newQuery))
         },
         results?.map {
             UiModel.TextLabel(it)

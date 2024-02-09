@@ -47,3 +47,4 @@ bin/
 /shell/.run/desktop.run.xml
 /.idea/kotlinc.xml
 /.idea/workspace.xml
+/.idea/shelf
