@@ -16,9 +16,9 @@ object App {
 fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model())
 
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View {
-    val actualQuery = query ?: ""
+    val queryOrBlank = query ?: ""
     return App.View(
-        UiModel.TextField(actualQuery) { newQuery ->
+        UiModel.TextField(queryOrBlank) { newQuery ->
             dispatch(App.Event.QueryChanged(newQuery))
         },
         results?.map {

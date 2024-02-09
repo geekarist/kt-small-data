@@ -42,10 +42,10 @@ fun MainScreen() {
         }
     )
     MaterialTheme {
-        TextField(view.query.text, onValueChange = {
-            view.query.onTextChanged(it)
-        })
         Column {
+            TextField(view.query.text, onValueChange = {
+                view.query.onTextChanged(it)
+            })
             view.results.forEach {
                 Text(it.text)
             }
