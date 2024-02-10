@@ -42,13 +42,22 @@ fun MainScreen() {
         }
     )
     MaterialTheme {
-        Column {
-            TextField(view.query.text, onValueChange = {
-                view.query.onTextChanged(it)
-            })
-            view.results.forEach {
-                Text(it.text)
-            }
+        App.Ui(view)
+    }
+}
+
+@Composable
+private fun App.Ui(view: App.View) = run {
+    var queryText: String by remember { mutableStateOf(view.query.text) }
+    LaunchedEffect(Unit) { queryText = view.query.text }
+    LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
+
+    Column {
+        TextField(queryText, onValueChange = {
+            queryText = it
+        })
+        view.results.forEach {
+            Text(it.text)
         }
     }
 }
