@@ -1,11 +1,15 @@
 package me.cpele.smalldata.shell
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import me.cpele.smalldata.core.App
@@ -52,12 +56,14 @@ private fun App.Ui(view: App.View) = run {
     LaunchedEffect(Unit) { queryText = view.query.text }
     LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
 
-    Column {
-        TextField(queryText, onValueChange = {
+    Column(modifier = Modifier.fillMaxSize()) {
+        TextField(queryText, modifier = Modifier.fillMaxWidth(), onValueChange = {
             queryText = it
         })
-        view.results.forEach {
-            Text(it.text)
+        LazyColumn (Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(view.results) {
+                Text(it.text)
+            }
         }
     }
 }
