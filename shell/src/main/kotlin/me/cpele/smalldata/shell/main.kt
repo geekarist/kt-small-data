@@ -9,6 +9,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -53,14 +55,21 @@ fun MainScreen() {
 @Composable
 private fun App.Ui(view: App.View) = run {
     var queryText: String by remember { mutableStateOf(view.query.text) }
-    LaunchedEffect(Unit) { queryText = view.query.text }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        queryText = view.query.text
+        focusRequester.requestFocus()
+    }
     LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TextField(queryText, modifier = Modifier.fillMaxWidth(), onValueChange = {
-            queryText = it
-        })
-        LazyColumn (Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TextField(
+            queryText,
+            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+            placeholder = { Text(view.query.placeholder ?: "") },
+            onValueChange = { queryText = it }
+        )
+        LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(view.results) {
                 Text(it.text)
             }

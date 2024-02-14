@@ -15,16 +15,14 @@ object App {
 
 fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model())
 
-fun App.Model.view(dispatch: (App.Event) -> Unit): App.View {
+fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
     val queryOrBlank = query ?: ""
-    return App.View(
-        UiModel.TextField(queryOrBlank) { newQuery ->
-            dispatch(App.Event.QueryChanged(newQuery))
-        },
-        results?.map {
-            UiModel.TextLabel(it)
-        } ?: emptyList()
-    )
+    val placeholder = "Search your data"
+    val queryUim = UiModel.TextField(queryOrBlank, placeholder) { newQuery ->
+        dispatch(App.Event.QueryChanged(newQuery))
+    }
+    val resultsUim = results?.map { UiModel.TextLabel(it) } ?: emptyList()
+    App.View(queryUim, resultsUim)
 }
 
 fun App.Model.makeUpdate(
