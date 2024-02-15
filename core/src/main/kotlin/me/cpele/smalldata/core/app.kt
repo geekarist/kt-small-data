@@ -1,7 +1,11 @@
 package me.cpele.smalldata.core
 
 object App {
-    data class Model(val query: String? = null, val results: List<String>? = null) {
+    data class Model(
+        val query: String? = null,
+        val results: List<String>? = null,
+        val backend: Obsidian.Details? = null,
+    ) {
         companion object
     }
 
