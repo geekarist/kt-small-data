@@ -22,7 +22,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(project(":core"))
     implementation("org.oolong-kt:oolong:2.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:+")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
 }
 
 compose.desktop {
