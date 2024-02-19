@@ -1,5 +1,7 @@
 package me.cpele.smalldata.core
 
+import java.util.logging.Logger
+
 object App {
     data class Model(
         val query: String? = null,
@@ -12,6 +14,7 @@ object App {
     data class View(val query: UiModel.TextField, val auth: List<UiModel>, val results: List<UiModel.TextLabel>)
 
     sealed interface Event {
+        data object AuthRequested : Event
         data class QueryChanged(val query: String) : Event
         data class ReceivedResults(val results: List<Obsidian.Finding>) : Event
     }
@@ -33,7 +36,9 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
             UiModel.TextLabel("REST API: ${this.backend.versions.restApi}"),
         )
     } else {
-        listOf(UiModel.Button("Authenticate to see results") { TODO("Authenticate callback") })
+        listOf(UiModel.Button("Authenticate to query") {
+            dispatch(App.Event.AuthRequested)
+        })
     }
     val resultsUim = this.results?.map { UiModel.TextLabel(it) } ?: emptyList()
     App.View(queryUim, authUim, resultsUim)
@@ -47,6 +52,10 @@ fun App.Model.makeUpdate(
             val results: List<Obsidian.Finding> = obsidian.findNotes(event.query)
             val receivedResults: App.Event = App.Event.ReceivedResults(results)
             dispatch(receivedResults)
+        }
+
+        App.Event.AuthRequested -> Change(this) {
+            Logger.getAnonymousLogger().info("TODO: Implement auth")
         }
 
         is App.Event.ReceivedResults -> Change(copy(results = event.results.map { finding ->
