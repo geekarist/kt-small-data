@@ -9,7 +9,7 @@ object App {
         companion object
     }
 
-    data class View(val query: UiModel.TextField, val results: List<UiModel.TextLabel>)
+    data class View(val query: UiModel.TextField, val auth: List<UiModel>, val results: List<UiModel.TextLabel>)
 
     sealed interface Event {
         data class QueryChanged(val query: String) : Event
@@ -20,13 +20,23 @@ object App {
 fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model())
 
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
-    val queryOrBlank = query ?: ""
+    val queryOrBlank = this.query ?: ""
     val placeholder = "Search your data"
     val queryUim = UiModel.TextField(queryOrBlank, placeholder) { newQuery ->
         dispatch(App.Event.QueryChanged(newQuery))
     }
-    val resultsUim = results?.map { UiModel.TextLabel(it) } ?: emptyList()
-    App.View(queryUim, resultsUim)
+
+    val authUim = if (this.backend?.authenticated == true) {
+        listOf(
+            UiModel.TextLabel("Status: ${this.backend.status}"),
+            UiModel.TextLabel("Obsidian: ${this.backend.versions.obsidian}"),
+            UiModel.TextLabel("REST API: ${this.backend.versions.restApi}"),
+        )
+    } else {
+        listOf(UiModel.Button("Authenticate to see results") { TODO("Authenticate callback") })
+    }
+    val resultsUim = this.results?.map { UiModel.TextLabel(it) } ?: emptyList()
+    App.View(queryUim, authUim, resultsUim)
 }
 
 fun App.Model.makeUpdate(

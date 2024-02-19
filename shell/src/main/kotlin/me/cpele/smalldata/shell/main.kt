@@ -4,6 +4,7 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -14,10 +15,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import me.cpele.smalldata.core.App
-import me.cpele.smalldata.core.init
-import me.cpele.smalldata.core.makeUpdate
-import me.cpele.smalldata.core.view
+import me.cpele.smalldata.core.*
 import oolong.Dispatch
 import oolong.runtime
 
@@ -69,6 +67,17 @@ private fun App.Ui(view: App.View) = run {
             placeholder = { Text(view.query.placeholder ?: "") },
             onValueChange = { queryText = it }
         )
+        Row {
+            view.auth.forEach { authItemUim ->
+                when (authItemUim) {
+                    is UiModel.Button -> Button(onClick = authItemUim.onPress) {
+                        Text(authItemUim.text)
+                    }
+                    is UiModel.TextLabel -> Text(authItemUim.text)
+                    else -> error("Auth item view has unknown type: $authItemUim")
+                }
+            }
+        }
         LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(view.results) {
                 Text(it.text)
