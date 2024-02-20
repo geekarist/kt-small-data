@@ -36,10 +36,11 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
             UiModel.TextLabel("REST API: ${this.backend.versions.restApi}"),
         )
     } else {
-        listOf(UiModel.Button("Authenticate to query") {
+        listOf(UiModel.Button("Authenticate") {
             dispatch(App.Event.AuthRequested)
         })
     }
+
     val resultsUim = this.results?.map { UiModel.TextLabel(it) } ?: emptyList()
     App.View(queryUim, authUim, resultsUim)
 }

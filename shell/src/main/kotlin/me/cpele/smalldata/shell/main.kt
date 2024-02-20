@@ -8,9 +8,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -29,23 +32,42 @@ private fun App.Ui(view: App.View) = run {
     LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TextField(
-            queryText,
-            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-            placeholder = { Text(view.query.placeholder ?: "") },
-            onValueChange = { queryText = it }
-        )
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(8.dp)
+        ) {
+            var queryHeightDp by remember {
+                mutableStateOf(0.dp)
+            }
+            // Query
+            val currentDensity = LocalDensity.current
+            TextField(
+                queryText,
+                modifier = Modifier.weight(1f).focusRequester(focusRequester).onGloballyPositioned { coords ->
+                    queryHeightDp = with(currentDensity) {
+                        coords.size.height.toDp()
+                    }
+                },
+                placeholder = { Text(view.query.placeholder ?: "") },
+                onValueChange = { queryText = it }
+            )
+            // Authentication
             view.auth.forEach { authItemUim ->
                 when (authItemUim) {
-                    is UiModel.Button -> Button(onClick = authItemUim.onPress) {
+                    is UiModel.Button -> Button(
+                        onClick = authItemUim.onPress,
+                        modifier = Modifier.height(queryHeightDp)
+                    ) {
                         Text(authItemUim.text)
                     }
+
                     is UiModel.TextLabel -> Text(authItemUim.text)
                     else -> error("Auth item view has unknown type: $authItemUim")
                 }
             }
         }
+        // Results
         LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(view.results) {
                 Text(it.text)
