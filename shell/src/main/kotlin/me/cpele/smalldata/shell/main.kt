@@ -23,54 +23,65 @@ import oolong.runtime
 
 @Composable
 private fun App.Ui(view: App.View) = run {
-    var queryText: String by remember { mutableStateOf(view.query.text) }
-    val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        queryText = view.query.text
-        focusRequester.requestFocus()
-    }
-    LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(8.dp)
-        ) {
-            var queryHeightDp by remember {
-                mutableStateOf(0.dp)
-            }
-            // Query
-            val currentDensity = LocalDensity.current
-            TextField(
-                queryText,
-                modifier = Modifier.weight(1f).focusRequester(focusRequester).onGloballyPositioned { coords ->
-                    queryHeightDp = with(currentDensity) {
-                        coords.size.height.toDp()
-                    }
-                },
-                placeholder = { Text(view.query.placeholder ?: "") },
-                onValueChange = { queryText = it }
-            )
-            // Authentication
-            view.auth.forEach { authItemUim ->
-                when (authItemUim) {
-                    is UiModel.Button -> Button(
-                        onClick = authItemUim.onPress,
-                        modifier = Modifier.height(queryHeightDp)
-                    ) {
-                        Text(authItemUim.text)
-                    }
-
-                    is UiModel.TextLabel -> Text(authItemUim.text)
-                    else -> error("Auth item view has unknown type: $authItemUim")
+    val authUi: @Composable (Modifier) -> Unit = { modifier ->
+        // Authentication
+        view.auth.forEach { authItemUim ->
+            when (authItemUim) {
+                is UiModel.Button -> Button(
+                    onClick = authItemUim.onPress,
+                    modifier = modifier
+                ) {
+                    Text(authItemUim.text)
                 }
+
+                is UiModel.TextLabel -> Text(authItemUim.text)
+                else -> error("Auth item view has unknown type: $authItemUim")
             }
         }
-        // Results
-        LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(view.results) {
-                Text(it.text)
+    }
+
+    if (view.auth.size == 1) {
+        // Not authenticated ⇒ only auth button
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            authUi(Modifier)
+        }
+    } else {
+        // Authenticated ⇒ auth, results, query
+        Column(modifier = Modifier.fillMaxSize()) {
+            var queryText: String by remember { mutableStateOf(view.query.text) }
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) {
+                queryText = view.query.text
+                focusRequester.requestFocus()
+            }
+            LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                var queryHeightDp by remember {
+                    mutableStateOf(0.dp)
+                }
+                // Query
+                val currentDensity = LocalDensity.current
+                TextField(
+                    queryText,
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester).onGloballyPositioned { coords ->
+                        queryHeightDp = with(currentDensity) {
+                            coords.size.height.toDp()
+                        }
+                    },
+                    placeholder = { Text(view.query.placeholder ?: "") },
+                    onValueChange = { queryText = it }
+                )
+                authUi(Modifier.height(queryHeightDp))
+            }
+            // Results
+            LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(view.results) {
+                    Text(it.text)
+                }
             }
         }
     }
