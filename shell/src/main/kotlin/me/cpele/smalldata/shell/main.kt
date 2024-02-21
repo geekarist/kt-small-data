@@ -25,17 +25,19 @@ import oolong.runtime
 private fun App.Ui(view: App.View) = run {
     val authUi: @Composable (Modifier) -> Unit = { modifier ->
         // Authentication
-        view.auth.forEach { authItemUim ->
-            when (authItemUim) {
-                is UiModel.Button -> Button(
-                    onClick = authItemUim.onPress,
-                    modifier = modifier
-                ) {
-                    Text(authItemUim.text)
-                }
+        Column {
+            view.auth.forEach { authItemUim ->
+                when (authItemUim) {
+                    is UiModel.Button -> Button(
+                        onClick = authItemUim.onPress,
+                        modifier = modifier
+                    ) {
+                        Text(authItemUim.text)
+                    }
 
-                is UiModel.TextLabel -> Text(authItemUim.text)
-                else -> error("Auth item view has unknown type: $authItemUim")
+                    is UiModel.TextLabel -> Text(authItemUim.text)
+                    else -> error("Auth item view has unknown type: $authItemUim")
+                }
             }
         }
     }
