@@ -1,7 +1,5 @@
 package me.cpele.smalldata.core
 
-import java.util.logging.Logger
-
 object App {
     data class Model(
         val query: String? = null,
@@ -17,6 +15,7 @@ object App {
         data object AuthRequested : Event
         data class QueryChanged(val query: String) : Event
         data class ReceivedResults(val results: List<Obsidian.Finding>) : Event
+        data class AuthReceived(val auth: Obsidian.Details) : Event
     }
 }
 
@@ -49,14 +48,17 @@ fun App.Model.makeUpdate(
     obsidian: Obsidian
 ): (App.Event) -> Change<App.Model, App.Event> = { event ->
     when (event) {
-        is App.Event.QueryChanged -> Change(copy(query = event.query)) { dispatch ->
-            val results: List<Obsidian.Finding> = obsidian.findNotes(event.query)
-            val receivedResults: App.Event = App.Event.ReceivedResults(results)
-            dispatch(receivedResults)
+        App.Event.AuthRequested -> Change(this) { dispatch ->
+            val auth = obsidian.auth()
+            dispatch(App.Event.AuthReceived(auth))
         }
 
-        App.Event.AuthRequested -> Change(this) {
-            Logger.getAnonymousLogger().info("TODO: Implement auth")
+        is App.Event.AuthReceived -> Change(model = this.copy(backend = event.auth))
+
+        is App.Event.QueryChanged -> Change(copy(query = event.query)) { dispatch ->
+            val results: List<Obsidian.Finding> = obsidian.notes(event.query)
+            val receivedResults: App.Event = App.Event.ReceivedResults(results)
+            dispatch(receivedResults)
         }
 
         is App.Event.ReceivedResults -> Change(copy(results = event.results.map { finding ->
