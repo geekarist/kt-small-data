@@ -2,18 +2,12 @@ package me.cpele.smalldata.shell
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -22,67 +16,57 @@ import oolong.Dispatch
 import oolong.runtime
 
 @Composable
-private fun App.Ui(view: App.View) = run {
-    val authUi: @Composable (Modifier) -> Unit = { modifier ->
-        // Authentication
-        Column {
-            view.auth.forEach { authItemUim ->
-                when (authItemUim) {
-                    is UiModel.Button -> Button(
-                        onClick = authItemUim.onPress,
-                        modifier = modifier
-                    ) {
-                        Text(authItemUim.text)
-                    }
-
-                    is UiModel.TextLabel -> Text(authItemUim.text)
-                    else -> error("Auth item view has unknown type: $authItemUim")
+private fun List<UiModel>.AuthUi(modifier: Modifier = Modifier) = run {
+    // Authentication
+    Column {
+        this@AuthUi.forEach { authItemUim ->
+            when (authItemUim) {
+                is UiModel.Button -> Button(
+                    onClick = authItemUim.onPress,
+                    modifier = modifier
+                ) {
+                    Text(authItemUim.text)
                 }
+
+                is UiModel.TextLabel -> Text(authItemUim.text)
+                else -> error("Auth item view has unknown type: $authItemUim")
             }
         }
     }
+}
 
-    if (view.auth.size == 1) {
-        // Not authenticated ⇒ only auth button
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            authUi(Modifier)
+@Composable
+private fun UiModel.TextField.Ui(modifier: Modifier = Modifier) {
+    var query by remember { mutableStateOf(this.text) }
+    LaunchedEffect(query) {
+        this@Ui.onTextChanged(query)
+    }
+    TextField(modifier = modifier, value = query, onValueChange = { query = it })
+}
+
+@Composable
+private fun App.Ui(view: App.View) = run {
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            var queryHeight: Dp? by remember { mutableStateOf(null) }
+            view.query.Ui(Modifier.weight(1f).onGloballyPositioned { queryHeight = it.size.height.dp })
+            view.auth.AuthUi(Modifier.let { authMod ->
+                queryHeight?.let { height ->
+                    authMod.height(height)
+                } ?: authMod
+            })
         }
-    } else {
-        // Authenticated ⇒ auth, results, query
-        Column(modifier = Modifier.fillMaxSize()) {
-            var queryText: String by remember { mutableStateOf(view.query.text) }
-            val focusRequester = remember { FocusRequester() }
-            LaunchedEffect(Unit) {
-                queryText = view.query.text
-                focusRequester.requestFocus()
-            }
-            LaunchedEffect(queryText) { view.query.onTextChanged(queryText) }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(8.dp)
-            ) {
-                var queryHeightDp by remember {
-                    mutableStateOf(0.dp)
-                }
-                // Query
-                val currentDensity = LocalDensity.current
-                TextField(
-                    queryText,
-                    modifier = Modifier.weight(1f).focusRequester(focusRequester).onGloballyPositioned { coords ->
-                        queryHeightDp = with(currentDensity) {
-                            coords.size.height.toDp()
-                        }
-                    },
-                    placeholder = { Text(view.query.placeholder ?: "") },
-                    onValueChange = { queryText = it }
-                )
-                authUi(Modifier.height(queryHeightDp))
-            }
-            // Results
-            LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(view.results) {
-                    Text(it.text)
+        Divider()
+        LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            view.results.forEach {
+                item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Text(modifier = Modifier.padding(8.dp), text = it.text)
+                    }
                 }
             }
         }
@@ -106,7 +90,8 @@ fun main() = application {
                     model to effect
                 },
                 update = { msg: App.Event, model: App.Model ->
-                    val (newModel, effect) = model.makeUpdate(FakeObsidian).invoke(msg)
+                    val obsidian = makeObsidian()
+                    val (newModel, effect) = model.makeUpdate(obsidian).invoke(msg)
                     newModel to effect
                 },
                 view = { model: App.Model, dispatch: Dispatch<App.Event> -> model.view { dispatch(it) } },
@@ -116,5 +101,14 @@ fun main() = application {
                 }
             )
         }
+    }
+}
+
+fun makeObsidian(): Obsidian = run {
+    val fakeObsidianStr = System.getenv("FAKE_OBSIDIAN")
+    if (fakeObsidianStr.isNullOrBlank()) {
+        RestObsidian
+    } else {
+        FakeObsidian
     }
 }
