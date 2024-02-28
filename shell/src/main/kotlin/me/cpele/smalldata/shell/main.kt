@@ -6,6 +6,8 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -37,11 +39,15 @@ private fun List<UiModel>.AuthUi(modifier: Modifier = Modifier) = run {
 
 @Composable
 private fun UiModel.TextField.Ui(modifier: Modifier = Modifier) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     var query by remember { mutableStateOf(this.text) }
     LaunchedEffect(query) {
         this@Ui.onTextChanged(query)
     }
-    TextField(modifier = modifier, value = query, onValueChange = { query = it })
+    TextField(modifier = modifier.focusRequester(focusRequester), value = query, onValueChange = { query = it })
 }
 
 @Composable
