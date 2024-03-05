@@ -7,7 +7,7 @@ object FakeObsidian : Obsidian {
         Obsidian.Finding("Note n°$num: $query")
     }
 
-    override fun auth() = Obsidian.Details(
+    override suspend fun auth() = Obsidian.Details(
         authenticated = true,
         status = "fake-status",
         versions = Obsidian.Details.Versions(

@@ -2,7 +2,7 @@ package me.cpele.smalldata.core
 
 interface Obsidian {
     fun notes(query: String): List<Finding>
-    fun auth(): Details
+    suspend fun auth(): Details
 
     data class Finding(val label: String)
 
