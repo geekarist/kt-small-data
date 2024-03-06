@@ -2,6 +2,8 @@ package me.cpele.smalldata.shell
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import me.cpele.smalldata.core.Obsidian
 import java.net.URI
 import java.net.http.HttpClient
@@ -10,6 +12,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.CertificateFactory
+import java.util.logging.Logger
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 
@@ -46,7 +49,19 @@ object RestObsidian : Obsidian {
         val authText: String = withContext(Dispatchers.IO) {
             client.send(request, BodyHandlers.ofString()).body()
         }
-        println(authText)
-        TODO()
+        val details: Details = Json.decodeFromString(authText)
+        Logger.getAnonymousLogger().info("Deserialized details: $details")
+        return details
+    }
+
+    @Serializable
+    data class Details(
+        override val status: String,
+        override val versions: Versions,
+        override val service: String,
+        override val authenticated: Boolean
+    ) : Obsidian.Details {
+        @Serializable
+        data class Versions(override val obsidian: String, override val self: String) : Obsidian.Details.Versions
     }
 }

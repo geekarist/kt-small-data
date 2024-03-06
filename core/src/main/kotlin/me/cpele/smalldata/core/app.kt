@@ -32,7 +32,7 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
         listOf(
             UiModel.TextLabel("Status: ${this.backend.status}"),
             UiModel.TextLabel("Obsidian: ${this.backend.versions.obsidian}"),
-            UiModel.TextLabel("REST API: ${this.backend.versions.restApi}"),
+            UiModel.TextLabel("REST API: ${this.backend.versions.self}"),
         )
     } else {
         listOf(UiModel.Button("Authenticate") {

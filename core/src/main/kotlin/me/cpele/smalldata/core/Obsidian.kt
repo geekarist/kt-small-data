@@ -6,7 +6,15 @@ interface Obsidian {
 
     data class Finding(val label: String)
 
-    data class Details(val authenticated: Boolean, val status: String, val versions: Versions) {
-        data class Versions(val obsidian: String, val restApi: String)
+    interface Details {
+        val status: String
+        val versions: Versions
+        val service: String
+        val authenticated: Boolean
+
+        interface Versions {
+            val obsidian: String
+            val self: String
+        }
     }
 }

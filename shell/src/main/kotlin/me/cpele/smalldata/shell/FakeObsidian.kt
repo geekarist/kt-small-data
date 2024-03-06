@@ -7,12 +7,22 @@ object FakeObsidian : Obsidian {
         Obsidian.Finding("Note n°$num: $query")
     }
 
-    override suspend fun auth() = Obsidian.Details(
+    override suspend fun auth() = Details(
         authenticated = true,
         status = "fake-status",
-        versions = Obsidian.Details.Versions(
+        service = "fake-service",
+        versions = Details.Versions(
             obsidian = "fake-obsidian-version",
-            restApi = "fake-rest-api-version"
+            self = "fake-rest-api-version"
         )
     )
+
+    data class Details(
+        override val status: String,
+        override val versions: Versions,
+        override val service: String,
+        override val authenticated: Boolean
+    ) : Obsidian.Details {
+        data class Versions(override val obsidian: String, override val self: String) : Obsidian.Details.Versions
+    }
 }
