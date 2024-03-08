@@ -8,6 +8,7 @@ import me.cpele.smalldata.core.Obsidian
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.security.KeyStore
 import java.security.SecureRandom
@@ -16,15 +17,45 @@ import java.util.logging.Logger
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 
+private const val API_KEY = "74b58c6979aff83c31ae20926bd823bbd8207bdf6d58ff7fa0437069ebab2bd0"
+private const val BASE_URL = "https://127.0.0.1:27124"
+
 object RestObsidian : Obsidian {
 
-    override fun notes(query: String): List<Obsidian.Finding> {
-        TODO("Not yet implemented")
+    override suspend fun notes(query: String): List<Obsidian.Finding> {
+        val sslCtx = buildSslContext()
+        val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+        val searchUri = URI(BASE_URL).resolve("/search/simple/").resolve("?query=$query")
+        val request = HttpRequest.newBuilder(searchUri)
+            .header("Authorization", "Bearer $API_KEY")
+            .POST(BodyPublishers.noBody())
+            .build()
+        val response = withContext(Dispatchers.IO) {
+            client.send(request, BodyHandlers.ofString())
+        }
+        val responseBody = response.body()
+        Logger.getAnonymousLogger().info("Got search response: $responseBody")
+        TODO()
     }
 
     override suspend fun auth(): Obsidian.Details {
-        val apiKey = "74b58c6979aff83c31ae20926bd823bbd8207bdf6d58ff7fa0437069ebab2bd0"
-        val authUri = URI("https://127.0.0.1:27124")
+        val sslCtx = buildSslContext()
+        val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+        val authUri = URI(BASE_URL)
+        val request = HttpRequest
+            .newBuilder(authUri)
+            .GET()
+            .header("Authorization", "Bearer $API_KEY")
+            .build()
+        val authText: String = withContext(Dispatchers.IO) {
+            client.send(request, BodyHandlers.ofString()).body()
+        }
+        val details: Details = Json.decodeFromString(authText)
+        Logger.getAnonymousLogger().info("Deserialized details: $details")
+        return details
+    }
+
+    private suspend fun buildSslContext(): SSLContext? {
         val sslCtx = SSLContext.getInstance("TLS")
         val algorithm = TrustManagerFactory.getDefaultAlgorithm()
         val trustMgrFactory = TrustManagerFactory.getInstance(algorithm)
@@ -40,18 +71,7 @@ object RestObsidian : Obsidian {
         trustMgrFactory.init(keyStore)
         val trustMgr = trustMgrFactory.trustManagers
         sslCtx.init(null, trustMgr, SecureRandom())
-        val client = HttpClient.newBuilder().sslContext(sslCtx).build()
-        val request = HttpRequest
-            .newBuilder(authUri)
-            .GET()
-            .header("Authorization", "Bearer $apiKey")
-            .build()
-        val authText: String = withContext(Dispatchers.IO) {
-            client.send(request, BodyHandlers.ofString()).body()
-        }
-        val details: Details = Json.decodeFromString(authText)
-        Logger.getAnonymousLogger().info("Deserialized details: $details")
-        return details
+        return sslCtx
     }
 
     @Serializable
