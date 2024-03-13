@@ -20,7 +20,7 @@ import javax.net.ssl.TrustManagerFactory
 private const val API_KEY = "74b58c6979aff83c31ae20926bd823bbd8207bdf6d58ff7fa0437069ebab2bd0"
 private const val BASE_URL = "https://127.0.0.1:27124"
 
-object RestObsidian : Obsidian {
+class RestObsidian(private val json: Json) : Obsidian {
 
     override suspend fun notes(query: String): List<Obsidian.Finding> {
         val sslCtx = buildSslContext()
@@ -34,8 +34,13 @@ object RestObsidian : Obsidian {
             client.send(request, BodyHandlers.ofString())
         }
         val responseBody = response.body()
-        Logger.getAnonymousLogger().info("Got search response: $responseBody")
-        TODO()
+        val findings: List<Finding> = json.decodeFromString(responseBody)
+        return findings
+    }
+
+    @Serializable
+    private data class Finding(private val filename: String) : Obsidian.Finding {
+        override val label: String = filename
     }
 
     override suspend fun auth(): Obsidian.Details {
@@ -50,7 +55,7 @@ object RestObsidian : Obsidian {
         val authText: String = withContext(Dispatchers.IO) {
             client.send(request, BodyHandlers.ofString()).body()
         }
-        val details: Details = Json.decodeFromString(authText)
+        val details: Details = json.decodeFromString(authText)
         Logger.getAnonymousLogger().info("Deserialized details: $details")
         return details
     }
@@ -75,7 +80,7 @@ object RestObsidian : Obsidian {
     }
 
     @Serializable
-    data class Details(
+    private data class Details(
         override val status: String,
         override val versions: Versions,
         override val service: String,

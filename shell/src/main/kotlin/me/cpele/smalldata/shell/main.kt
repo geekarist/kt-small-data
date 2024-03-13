@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import kotlinx.serialization.json.Json
 import me.cpele.smalldata.core.*
 import oolong.Dispatch
 import oolong.runtime
@@ -96,7 +97,7 @@ fun main() = application {
                     model to effect
                 },
                 update = { msg: App.Event, model: App.Model ->
-                    val obsidian = makeObsidian()
+                    val obsidian = makeObsidian(makeJson())
                     val (newModel, effect) = model.makeUpdate(obsidian).invoke(msg)
                     newModel to effect
                 },
@@ -110,10 +111,14 @@ fun main() = application {
     }
 }
 
-fun makeObsidian(): Obsidian = run {
+fun makeJson() = Json {
+    ignoreUnknownKeys = true
+}
+
+fun makeObsidian(json: Json): Obsidian = run {
     val fakeObsidianStr = System.getenv("FAKE_OBSIDIAN")
     if (fakeObsidianStr.isNullOrBlank()) {
-        RestObsidian
+        RestObsidian(json)
     } else {
         FakeObsidian
     }

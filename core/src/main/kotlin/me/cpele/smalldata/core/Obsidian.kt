@@ -4,7 +4,9 @@ interface Obsidian {
     suspend fun notes(query: String): List<Finding>
     suspend fun auth(): Details
 
-    data class Finding(val label: String)
+    interface Finding {
+        val label: String
+    }
 
     interface Details {
         val status: String

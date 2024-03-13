@@ -4,7 +4,9 @@ import me.cpele.smalldata.core.Obsidian
 
 object FakeObsidian : Obsidian {
     override suspend fun notes(query: String): List<Obsidian.Finding> = (1..10).map { num ->
-        Obsidian.Finding("Note n°$num: $query")
+        object : Obsidian.Finding {
+            override val label: String = "Note n°$num: $query"
+        }
     }
 
     override suspend fun auth() = Details(
