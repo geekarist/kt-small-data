@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.cpele.smalldata.core.Obsidian
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
@@ -23,18 +24,25 @@ private const val BASE_URL = "https://127.0.0.1:27124"
 class RestObsidian(private val json: Json) : Obsidian {
 
     override suspend fun notes(query: String): List<Obsidian.Finding> {
-        val sslCtx = buildSslContext()
-        val client = HttpClient.newBuilder().sslContext(sslCtx).build()
-        val searchUri = URI(BASE_URL).resolve("/search/simple/").resolve("?query=$query")
-        val request = HttpRequest.newBuilder(searchUri)
-            .header("Authorization", "Bearer $API_KEY")
-            .POST(BodyPublishers.noBody())
-            .build()
-        val response = withContext(Dispatchers.IO) {
-            client.send(request, BodyHandlers.ofString())
+        val request = withContext(Dispatchers.Default) {
+            val encodedQuery = URLEncoder.encode(query, Charsets.UTF_8)
+            val searchUri = URI(BASE_URL).resolve("/search/simple/").resolve("?query=$encodedQuery")
+            HttpRequest.newBuilder(searchUri)
+                .header("Authorization", "Bearer $API_KEY")
+                .POST(BodyPublishers.noBody())
+                .build()
         }
-        val responseBody = response.body()
-        val findings: List<Finding> = json.decodeFromString(responseBody)
+        val client = withContext(Dispatchers.Default) {
+            val sslCtx = buildSslContext()
+            HttpClient.newBuilder().sslContext(sslCtx).build()
+        }
+        val responseBody = withContext(Dispatchers.IO) {
+            val response = client.send(request, BodyHandlers.ofString())
+            response.body()
+        }
+        val findings: List<Finding> = withContext(Dispatchers.Default) {
+            json.decodeFromString(responseBody)
+        }
         return findings
     }
 
