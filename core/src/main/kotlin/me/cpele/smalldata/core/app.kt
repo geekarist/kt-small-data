@@ -1,11 +1,19 @@
 package me.cpele.smalldata.core
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.logging.Logger
+import kotlin.time.Duration.Companion.seconds
+
 object App {
     data class Model(
         val query: String? = null,
         val results: List<String>? = null,
         val backend: Obsidian.Details? = null,
+        val searchJob: Job? = null,
     ) {
+
         companion object
     }
 
@@ -16,6 +24,7 @@ object App {
         data class QueryChanged(val query: String) : Event
         data class ReceivedResults(val results: List<Obsidian.Finding>) : Event
         data class AuthReceived(val auth: Obsidian.Details) : Event
+        data class SearchLaunched(val job: Job) : Event
     }
 }
 
@@ -56,13 +65,26 @@ fun App.Model.makeUpdate(
         is App.Event.AuthReceived -> Change(model = this.copy(backend = event.auth))
 
         is App.Event.QueryChanged -> Change(copy(query = event.query)) { dispatch ->
-            val results: List<Obsidian.Finding> = obsidian.notes(event.query)
-            val receivedResults: App.Event = App.Event.ReceivedResults(results)
-            dispatch(receivedResults)
+            Logger.getLogger(App::class.simpleName).info("Canceling prior search job")
+            this@makeUpdate.searchJob?.cancel()
+            val job = launch {
+                Logger.getLogger(App::class.simpleName).info("Query-changed job was launched")
+                Logger.getLogger(App::class.simpleName).info("Searching notes for query: ${event.query}")
+                val results: List<Obsidian.Finding> = obsidian.notes(event.query)
+                Logger.getLogger(App::class.simpleName).info("Found ${results.size} results: $results")
+                val receivedResults: App.Event = App.Event.ReceivedResults(results)
+                Logger.getLogger(App::class.simpleName).info("\"Debouncing\" for 1 sec")
+                delay(1.seconds) // Kind of debounce
+                Logger.getLogger(App::class.simpleName).info("Dispatching event: $receivedResults")
+                dispatch(receivedResults)
+            }
+            dispatch(App.Event.SearchLaunched(job = job))
         }
 
         is App.Event.ReceivedResults -> Change(copy(results = event.results.map { finding ->
             finding.label
         }))
+
+        is App.Event.SearchLaunched -> Change(copy(searchJob = event.job))
     }
 }
