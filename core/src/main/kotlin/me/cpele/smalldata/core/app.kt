@@ -28,7 +28,9 @@ object App {
     }
 }
 
-fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model())
+fun App.Model.Companion.init(): Change<App.Model, App.Event> = Change(App.Model()) { dispatch ->
+    dispatch(App.Event.AuthRequested)
+}
 
 fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
     val queryOrBlank = this.query ?: ""
