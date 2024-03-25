@@ -69,10 +69,12 @@ private fun App.Ui(view: App.View) = run {
         }
         Divider()
         LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            view.results.forEach {
+            view.results.forEach { result ->
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Text(modifier = Modifier.padding(8.dp), text = it.text)
+                        Button(modifier = Modifier.padding(8.dp), onClick = result.onPress) {
+                            Text(result.text)
+                        }
                     }
                 }
             }

@@ -46,6 +46,24 @@ class RestObsidian(private val json: Json) : Obsidian {
         return findings
     }
 
+    override suspend fun open(path: String) {
+        Logger.getAnonymousLogger().info("Opening $path")
+        val urlEncodedPath = URI(null, null, path, null).toASCIIString()
+        Logger.getAnonymousLogger().info("URL-encoded path: $urlEncodedPath")
+        val request = HttpRequest.newBuilder(
+            URI(BASE_URL).resolve("/open/").resolve(urlEncodedPath)
+        ).header("Authorization", "Bearer $API_KEY")
+            .POST(BodyPublishers.noBody())
+            .build()
+        Logger.getAnonymousLogger().info("Sending HTTP request: $request")
+        val sslCtx = buildSslContext()
+        val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+        val responseBody = withContext(Dispatchers.IO) {
+            client.send(request, BodyHandlers.ofString()).body()
+        }
+        Logger.getAnonymousLogger().info("Got /open response: $responseBody")
+    }
+
     @Serializable
     private data class Finding(private val filename: String) : Obsidian.Finding {
         override val label: String = filename

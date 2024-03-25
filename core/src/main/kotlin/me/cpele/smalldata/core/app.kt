@@ -17,7 +17,7 @@ object App {
         companion object
     }
 
-    data class View(val query: UiModel.TextField, val auth: List<UiModel>, val results: List<UiModel.TextLabel>)
+    data class View(val query: UiModel.TextField, val auth: List<UiModel>, val results: List<UiModel.Button>)
 
     sealed interface Event {
         data object AuthRequested : Event
@@ -25,6 +25,7 @@ object App {
         data class ReceivedResults(val results: List<Obsidian.Finding>) : Event
         data class AuthReceived(val auth: Obsidian.Details) : Event
         data class SearchLaunched(val job: Job) : Event
+        data class OpenFileRequested(val path: String) : Event
     }
 }
 
@@ -51,7 +52,11 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
         })
     }
 
-    val resultsUim = this.results?.map { UiModel.TextLabel(it) } ?: emptyList()
+    val resultsUim = this.results?.map {
+        UiModel.Button(it) {
+            dispatch(App.Event.OpenFileRequested(it))
+        }
+    } ?: emptyList()
     App.View(queryUim, authUim, resultsUim)
 }
 
@@ -88,5 +93,8 @@ fun App.Model.makeUpdate(
         }))
 
         is App.Event.SearchLaunched -> Change(copy(searchJob = event.job))
+        is App.Event.OpenFileRequested -> Change(this) {
+            obsidian.open(event.path)
+        }
     }
 }

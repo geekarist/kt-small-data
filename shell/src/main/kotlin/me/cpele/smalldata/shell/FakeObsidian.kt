@@ -19,6 +19,10 @@ object FakeObsidian : Obsidian {
         )
     )
 
+    override suspend fun open(path: String) {
+        TODO("Not yet implemented")
+    }
+
     data class Details(
         override val status: String,
         override val versions: Versions,
