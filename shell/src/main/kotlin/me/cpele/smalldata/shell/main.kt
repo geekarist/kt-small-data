@@ -1,5 +1,8 @@
 package me.cpele.smalldata.shell
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
@@ -8,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -72,7 +76,13 @@ private fun App.Ui(view: App.View) = run {
             view.results.forEach { result ->
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Button(modifier = Modifier.padding(8.dp), onClick = result.onPress) {
+                        Button(
+                            modifier = Modifier
+                                .border(BorderStroke(0.dp, Color.Transparent))
+                                .padding(8.dp)
+                                .background(Color.Transparent),
+                            onClick = result.onPress
+                        ) {
                             Text(result.text)
                         }
                     }
