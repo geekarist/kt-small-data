@@ -21,6 +21,8 @@ import kotlinx.serialization.json.Json
 import me.cpele.smalldata.core.*
 import oolong.Dispatch
 import oolong.runtime
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 private fun List<UiModel>.AuthUi(modifier: Modifier = Modifier) = run {
@@ -57,33 +59,45 @@ private fun UiModel.TextField.Ui(modifier: Modifier = Modifier) {
 
 @Composable
 private fun App.Ui(view: App.View) = run {
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            var queryHeight: Dp? by remember { mutableStateOf(null) }
-            view.query.Ui(Modifier.weight(1f).onGloballyPositioned { queryHeight = it.size.height.dp })
-            view.auth.AuthUi(Modifier.let { authMod ->
-                queryHeight?.let { height ->
-                    authMod.height(height)
-                } ?: authMod
-            })
-        }
-        Divider()
-        LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            view.results.forEach { result ->
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Button(
-                            modifier = Modifier
-                                .border(BorderStroke(0.dp, Color.Transparent))
-                                .padding(8.dp)
-                                .background(Color.Transparent),
-                            onClick = result.onPress
-                        ) {
-                            Text(result.text)
+    MaterialTheme(
+        colors = MaterialTheme.colors.copy(
+            surface = Color.LightGray.copy(
+                red = min(1f, Color.LightGray.red * 1.2f),
+                green = min(1f, Color.LightGray.green * 1.2f),
+                blue = min(1f, Color.LightGray.blue * 1.2f),
+            ),
+        )
+    ) {
+        Surface {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    var queryHeight: Dp? by remember { mutableStateOf(null) }
+                    view.query.Ui(Modifier.weight(1f).onGloballyPositioned { queryHeight = it.size.height.dp })
+                    view.auth.AuthUi(Modifier.let { authMod ->
+                        queryHeight?.let { height ->
+                            authMod.height(height)
+                        } ?: authMod
+                    })
+                }
+                Divider()
+                LazyColumn(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    view.results.forEach { result ->
+                        item {
+                            Card(Modifier.fillMaxWidth().align(Alignment.Start)) {
+                                TextButton(
+                                    modifier = Modifier.align(Alignment.Start), onClick = result.onPress
+                                ) {
+                                    Text(modifier = Modifier.fillMaxWidth(), text = result.text)
+                                }
+                            }
                         }
                     }
                 }
