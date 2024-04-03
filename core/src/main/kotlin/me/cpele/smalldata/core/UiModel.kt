@@ -9,5 +9,6 @@ sealed interface UiModel {
     ) : UiModel
 
     data class TextLabel(val text: String) : UiModel
+
     data class Button(val text: String, val onPress: () -> Unit) : UiModel
 }

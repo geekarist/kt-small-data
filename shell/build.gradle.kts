@@ -7,6 +7,7 @@ plugins {
 }
 
 group = "me.cpele.smalldata"
+
 version = "1.0-SNAPSHOT"
 
 repositories {

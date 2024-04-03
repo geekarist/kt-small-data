@@ -1,8 +1,7 @@
-plugins {
-    kotlin("jvm")
-}
+plugins { kotlin("jvm") }
 
 group = "me.cpele.smalldata"
+
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -10,6 +9,4 @@ repositories {
     google()
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-}
+dependencies { implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3") }
