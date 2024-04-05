@@ -40,11 +40,12 @@ object App {
     data class Context(val obsidian: Obsidian, val logger: Logger)
 }
 
-fun App.Model.Companion.init(): Change<App.Model, App.Event> =
+fun App.init(): Change<App.Model, App.Event> = run {
     Change(App.Model()) { dispatch -> dispatch(App.Event.AuthRequested) }
+}
 
-fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
-    val queryOrBlank = this.query ?: ""
+fun App.view(model: App.Model, dispatch: (App.Event) -> Unit): App.View = run {
+    val queryOrBlank = model.query ?: ""
     val placeholder = "Search your data"
     val queryUim =
         UiModel.TextField(queryOrBlank, placeholder) { newQuery ->
@@ -52,35 +53,35 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
         }
 
     val authUim =
-        if (this.backend?.authenticated == true) {
+        if (model.backend?.authenticated == true) {
             listOf(
-                UiModel.TextLabel("Status: ${this.backend.status}"),
-                UiModel.TextLabel("Obsidian: ${this.backend.versions.obsidian}"),
-                UiModel.TextLabel("REST API: ${this.backend.versions.self}"),
+                UiModel.TextLabel("Status: ${model.backend.status}"),
+                UiModel.TextLabel("Obsidian: ${model.backend.versions.obsidian}"),
+                UiModel.TextLabel("REST API: ${model.backend.versions.self}"),
             )
         } else {
             listOf(UiModel.Button("Authenticate") { dispatch(App.Event.AuthRequested) })
         }
 
     val resultsUim =
-        this.results?.map { UiModel.Button(it) { dispatch(App.Event.OpenFileRequested(it)) } }
+        model.results?.map { UiModel.Button(it) { dispatch(App.Event.OpenFileRequested(it)) } }
             ?: emptyList()
     App.View(queryUim, authUim, resultsUim)
 }
 
 context(App.Context)
-fun App.Model.update(event: App.Event): Change<App.Model, App.Event> =
+fun App.update(model: App.Model, event: App.Event): Change<App.Model, App.Event> =
     when (event) {
         App.Event.AuthRequested ->
-            Change(this) { dispatch ->
+            Change(model) { dispatch ->
                 val auth = obsidian.auth()
                 dispatch(App.Event.AuthReceived(auth))
             }
-        is App.Event.AuthReceived -> Change(model = this.copy(backend = event.auth))
+        is App.Event.AuthReceived -> Change(model = model.copy(backend = event.auth))
         is App.Event.QueryChanged ->
-            Change(copy(query = event.query)) { dispatch ->
+            Change(model.copy(query = event.query)) { dispatch ->
                 logger.info("Canceling prior search job")
-                searchJob?.cancel()
+                model.searchJob?.cancel()
                 val job = launch {
                     logger.info("Query-changed job was launched")
                     logger.info("Searching notes for query: ${event.query}")
@@ -95,7 +96,7 @@ fun App.Model.update(event: App.Event): Change<App.Model, App.Event> =
                 dispatch(App.Event.SearchLaunched(job = job))
             }
         is App.Event.ReceivedResults ->
-            Change(copy(results = event.results.map { finding -> finding.label }))
-        is App.Event.SearchLaunched -> Change(copy(searchJob = event.job))
-        is App.Event.OpenFileRequested -> Change(this) { obsidian.open(event.path) }
+            Change(model.copy(results = event.results.map { finding -> finding.label }))
+        is App.Event.SearchLaunched -> Change(model.copy(searchJob = event.job))
+        is App.Event.OpenFileRequested -> Change(model) { obsidian.open(event.path) }
     }

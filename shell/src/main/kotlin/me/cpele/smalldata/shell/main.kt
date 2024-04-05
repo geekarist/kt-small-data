@@ -105,8 +105,10 @@ private fun App.Ui(view: App.View) = run {
 fun main() = application {
     Window(onCloseRequest = ::exitApplication) {
         var view: App.View by remember {
+            val init = App.init()
+            val model = init.model
             mutableStateOf(
-                App.Model.init().model.view {
+                App.view(model) {
                     // No op
                 })
         }
@@ -114,18 +116,18 @@ fun main() = application {
         LaunchedEffect(Unit) {
             runtime(
                 init = {
-                    val (model, effect) = App.Model.init()
+                    val (model, effect) = App.init()
                     model to effect
                 },
                 update = { msg: App.Event, model: App.Model ->
                     val obsidian = makeObsidian(makeJson())
                     val logger = Logger.getLogger(App::class.simpleName)
                     val context = App.Context(obsidian, logger)
-                    val (newModel, effect) = with(context) { model.update(msg) }
+                    val (newModel, effect) = with(context) { App.update(model, msg) }
                     newModel to effect
                 },
                 view = { model: App.Model, dispatch: Dispatch<App.Event> ->
-                    model.view { dispatch(it) }
+                    App.view(model) { dispatch(it) }
                 },
                 render = {
                     view = it
