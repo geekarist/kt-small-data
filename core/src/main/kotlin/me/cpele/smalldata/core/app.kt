@@ -36,6 +36,8 @@ object App {
 
         data class OpenFileRequested(val path: String) : Event
     }
+
+    data class Context(val obsidian: Obsidian, val logger: Logger)
 }
 
 fun App.Model.Companion.init(): Change<App.Model, App.Event> =
@@ -66,39 +68,34 @@ fun App.Model.view(dispatch: (App.Event) -> Unit): App.View = run {
     App.View(queryUim, authUim, resultsUim)
 }
 
-fun App.Model.makeUpdate(obsidian: Obsidian): (App.Event) -> Change<App.Model, App.Event> =
-    { event ->
-        when (event) {
-            App.Event.AuthRequested ->
-                Change(this) { dispatch ->
-                    val auth = obsidian.auth()
-                    dispatch(App.Event.AuthReceived(auth))
+context(App.Context)
+fun App.Model.update(event: App.Event): Change<App.Model, App.Event> =
+    when (event) {
+        App.Event.AuthRequested ->
+            Change(this) { dispatch ->
+                val auth = obsidian.auth()
+                dispatch(App.Event.AuthReceived(auth))
+            }
+        is App.Event.AuthReceived -> Change(model = this.copy(backend = event.auth))
+        is App.Event.QueryChanged ->
+            Change(copy(query = event.query)) { dispatch ->
+                logger.info("Canceling prior search job")
+                searchJob?.cancel()
+                val job = launch {
+                    logger.info("Query-changed job was launched")
+                    logger.info("Searching notes for query: ${event.query}")
+                    val results: List<Obsidian.Finding> = obsidian.notes(event.query)
+                    logger.info("Found ${results.size} results: $results")
+                    val receivedResults: App.Event = App.Event.ReceivedResults(results)
+                    logger.info("\"Debouncing\" for 1 sec")
+                    delay(1.seconds) // Kind of debounce
+                    logger.info("Dispatching event: $receivedResults")
+                    dispatch(receivedResults)
                 }
-            is App.Event.AuthReceived -> Change(model = this.copy(backend = event.auth))
-            is App.Event.QueryChanged ->
-                Change(copy(query = event.query)) { dispatch ->
-                    Logger.getLogger(App::class.simpleName).info("Canceling prior search job")
-                    this@makeUpdate.searchJob?.cancel()
-                    val job = launch {
-                        Logger.getLogger(App::class.simpleName)
-                            .info("Query-changed job was launched")
-                        Logger.getLogger(App::class.simpleName)
-                            .info("Searching notes for query: ${event.query}")
-                        val results: List<Obsidian.Finding> = obsidian.notes(event.query)
-                        Logger.getLogger(App::class.simpleName)
-                            .info("Found ${results.size} results: $results")
-                        val receivedResults: App.Event = App.Event.ReceivedResults(results)
-                        Logger.getLogger(App::class.simpleName).info("\"Debouncing\" for 1 sec")
-                        delay(1.seconds) // Kind of debounce
-                        Logger.getLogger(App::class.simpleName)
-                            .info("Dispatching event: $receivedResults")
-                        dispatch(receivedResults)
-                    }
-                    dispatch(App.Event.SearchLaunched(job = job))
-                }
-            is App.Event.ReceivedResults ->
-                Change(copy(results = event.results.map { finding -> finding.label }))
-            is App.Event.SearchLaunched -> Change(copy(searchJob = event.job))
-            is App.Event.OpenFileRequested -> Change(this) { obsidian.open(event.path) }
-        }
+                dispatch(App.Event.SearchLaunched(job = job))
+            }
+        is App.Event.ReceivedResults ->
+            Change(copy(results = event.results.map { finding -> finding.label }))
+        is App.Event.SearchLaunched -> Change(copy(searchJob = event.job))
+        is App.Event.OpenFileRequested -> Change(this) { obsidian.open(event.path) }
     }

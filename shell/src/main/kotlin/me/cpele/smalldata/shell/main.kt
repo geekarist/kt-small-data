@@ -18,6 +18,7 @@ import kotlinx.serialization.json.Json
 import me.cpele.smalldata.core.*
 import oolong.Dispatch
 import oolong.runtime
+import java.util.logging.Logger
 import kotlin.math.min
 
 @Composable
@@ -118,7 +119,9 @@ fun main() = application {
                 },
                 update = { msg: App.Event, model: App.Model ->
                     val obsidian = makeObsidian(makeJson())
-                    val (newModel, effect) = model.makeUpdate(obsidian).invoke(msg)
+                    val logger = Logger.getLogger(App::class.simpleName)
+                    val context = App.Context(obsidian, logger)
+                    val (newModel, effect) = with(context) { model.update(msg) }
                     newModel to effect
                 },
                 view = { model: App.Model, dispatch: Dispatch<App.Event> ->
