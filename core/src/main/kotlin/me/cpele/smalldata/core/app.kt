@@ -3,6 +3,9 @@ package me.cpele.smalldata.core
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.cpele.smalldata.core.App.Event
+import me.cpele.smalldata.core.App.Model
+import me.cpele.smalldata.core.App.View
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
 
@@ -12,10 +15,7 @@ object App {
         val results: List<String>? = null,
         val obsidianBackend: Obsidian.Details? = null,
         val obsidianSearchJob: Job? = null,
-    ) {
-
-        companion object
-    }
+    )
 
     data class View(
         val query: UiModel.TextField,
@@ -42,16 +42,16 @@ object App {
     data class Context(val obsidian: Obsidian, val logger: Logger)
 }
 
-fun App.init(): Change<App.Model, App.Event> = run {
-    Change(App.Model()) { dispatch -> dispatch(App.Event.AuthRequested) }
+fun App.init(): Change<Model, Event> = run {
+    Change(Model()) { dispatch -> dispatch(Event.AuthRequested) }
 }
 
-fun App.view(model: App.Model, dispatch: (App.Event) -> Unit): App.View = run {
+fun App.view(model: Model, dispatch: (Event) -> Unit): View = run {
     val queryOrBlank = model.query ?: ""
     val placeholder = "Search your data"
     val queryUim =
         UiModel.TextField(queryOrBlank, placeholder) { newQuery ->
-            dispatch(App.Event.QueryChanged(newQuery))
+            dispatch(Event.QueryChanged(newQuery))
         }
 
     val authUim =
@@ -62,34 +62,35 @@ fun App.view(model: App.Model, dispatch: (App.Event) -> Unit): App.View = run {
                 UiModel.TextLabel("REST API: ${model.obsidianBackend.versions.self}"),
             )
         } else {
-            listOf(UiModel.Button("Authenticate") { dispatch(App.Event.AuthRequested) })
+            listOf(UiModel.Button("Authenticate") { dispatch(Event.AuthRequested) })
         }
 
     val resultsUim =
         model.results?.map {
-            UiModel.Button(it) { dispatch(App.Event.ObsidianSearch.OpenFileRequested(it)) }
+            UiModel.Button(it) { dispatch(Event.ObsidianSearch.OpenFileRequested(it)) }
         } ?: emptyList()
-    App.View(queryUim, authUim, resultsUim)
+    View(queryUim, authUim, resultsUim)
 }
 
 context(App.Context)
-fun App.update(model: App.Model, event: App.Event): Change<App.Model, App.Event> =
+fun App.update(model: Model, event: Event): Change<Model, Event> =
     when (event) {
-        App.Event.AuthRequested ->
+        Event.AuthRequested ->
             Change(model) { dispatch ->
                 val auth = obsidian.auth()
-                dispatch(App.Event.ObsidianSearch.AuthReceived(auth))
+                dispatch(Event.ObsidianSearch.AuthReceived(auth))
             }
-        is App.Event.QueryChanged -> updateOnQueryChanged(model, event)
-        is App.Event.ObsidianSearch.AuthReceived ->
+        is Event.QueryChanged -> updateOnQueryChanged(model, event)
+        is Event.ObsidianSearch.AuthReceived ->
             Change(model = model.copy(obsidianBackend = event.auth))
-        is App.Event.ObsidianSearch.Launched -> Change(model.copy(obsidianSearchJob = event.job))
-        is App.Event.ObsidianSearch.ReceivedResults ->
+        is Event.ObsidianSearch.Launched -> Change(model.copy(obsidianSearchJob = event.job))
+        is Event.ObsidianSearch.ReceivedResults ->
             Change(model.copy(results = event.results.map { finding -> finding.label }))
-        is App.Event.ObsidianSearch.OpenFileRequested -> Change(model) { obsidian.open(event.path) }
+        is Event.ObsidianSearch.OpenFileRequested -> Change(model) { obsidian.open(event.path) }
     }
 
-private fun App.Context.updateOnQueryChanged(model: App.Model, event: App.Event.QueryChanged) =
+context(App.Context)
+private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
     Change(model.copy(query = event.query)) { dispatch ->
         logger.info("Canceling prior Obsidian search job")
         model.obsidianSearchJob?.cancel()
@@ -98,12 +99,12 @@ private fun App.Context.updateOnQueryChanged(model: App.Model, event: App.Event.
             logger.info("Searching notes for query: ${event.query}")
             val results: List<Obsidian.Finding> = obsidian.notes(event.query)
             logger.info("Found ${results.size} results: $results")
-            val receivedObsidianResults: App.Event =
-                App.Event.ObsidianSearch.ReceivedResults(results)
+            val receivedObsidianResults: Event =
+                Event.ObsidianSearch.ReceivedResults(results)
             logger.info("\"Debouncing\" for 1 sec")
             delay(1.seconds) // Kind of debounce
             logger.info("Dispatching event: $receivedObsidianResults")
             dispatch(receivedObsidianResults)
         }
-        dispatch(App.Event.ObsidianSearch.Launched(job = obsidianJob))
+        dispatch(Event.ObsidianSearch.Launched(job = obsidianJob))
     }
