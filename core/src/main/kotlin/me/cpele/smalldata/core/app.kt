@@ -13,9 +13,13 @@ object App {
     data class Model(
         val query: String? = null,
         val results: List<String>? = null,
-        val obsidianBackend: Obsidian.Details? = null,
-        val obsidianSearchJob: Job? = null,
-    )
+        val obsidian: Obsidian = Obsidian(),
+    ) {
+        data class Obsidian(
+            val backend: ObsidianEffects.Details? = null,
+            val searchJob: Job? = null,
+        )
+    }
 
     data class View(
         val query: UiModel.TextField,
@@ -29,17 +33,17 @@ object App {
         data class QueryChanged(val query: String) : Event
 
         sealed interface ObsidianSearch : Event {
-            data class AuthReceived(val auth: Obsidian.Details) : ObsidianSearch
+            data class AuthReceived(val auth: ObsidianEffects.Details) : ObsidianSearch
 
             data class Launched(val job: Job) : ObsidianSearch
 
-            data class ReceivedResults(val results: List<Obsidian.Finding>) : ObsidianSearch
+            data class ReceivedResults(val results: List<ObsidianEffects.Finding>) : ObsidianSearch
 
             data class OpenFileRequested(val path: String) : ObsidianSearch
         }
     }
 
-    data class Context(val obsidian: Obsidian, val logger: Logger)
+    data class Context(val obsidian: ObsidianEffects, val logger: Logger)
 }
 
 fun App.init(): Change<Model, Event> = run {
@@ -55,11 +59,11 @@ fun App.view(model: Model, dispatch: (Event) -> Unit): View = run {
         }
 
     val authUim =
-        if (model.obsidianBackend?.authenticated == true) {
+        if (model.obsidian.backend?.authenticated == true) {
             listOf(
-                UiModel.TextLabel("Status: ${model.obsidianBackend.status}"),
-                UiModel.TextLabel("Obsidian: ${model.obsidianBackend.versions.obsidian}"),
-                UiModel.TextLabel("REST API: ${model.obsidianBackend.versions.self}"),
+                UiModel.TextLabel("Status: ${model.obsidian.backend.status}"),
+                UiModel.TextLabel("Obsidian: ${model.obsidian.backend.versions.obsidian}"),
+                UiModel.TextLabel("REST API: ${model.obsidian.backend.versions.self}"),
             )
         } else {
             listOf(UiModel.Button("Authenticate") { dispatch(Event.AuthRequested) })
@@ -82,8 +86,9 @@ fun App.update(model: Model, event: Event): Change<Model, Event> =
             }
         is Event.QueryChanged -> updateOnQueryChanged(model, event)
         is Event.ObsidianSearch.AuthReceived ->
-            Change(model = model.copy(obsidianBackend = event.auth))
-        is Event.ObsidianSearch.Launched -> Change(model.copy(obsidianSearchJob = event.job))
+            Change(model.copy(obsidian = model.obsidian.copy(backend = event.auth)))
+        is Event.ObsidianSearch.Launched ->
+            Change(model.copy(obsidian = model.obsidian.copy(searchJob = event.job)))
         is Event.ObsidianSearch.ReceivedResults ->
             Change(model.copy(results = event.results.map { finding -> finding.label }))
         is Event.ObsidianSearch.OpenFileRequested -> Change(model) { obsidian.open(event.path) }
@@ -93,14 +98,13 @@ context(App.Context)
 private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
     Change(model.copy(query = event.query)) { dispatch ->
         logger.info("Canceling prior Obsidian search job")
-        model.obsidianSearchJob?.cancel()
+        model.obsidian.searchJob?.cancel()
         val obsidianJob = launch {
             logger.info("Query-changed job was launched")
             logger.info("Searching notes for query: ${event.query}")
-            val results: List<Obsidian.Finding> = obsidian.notes(event.query)
+            val results: List<ObsidianEffects.Finding> = obsidian.notes(event.query)
             logger.info("Found ${results.size} results: $results")
-            val receivedObsidianResults: Event =
-                Event.ObsidianSearch.ReceivedResults(results)
+            val receivedObsidianResults: Event = Event.ObsidianSearch.ReceivedResults(results)
             logger.info("\"Debouncing\" for 1 sec")
             delay(1.seconds) // Kind of debounce
             logger.info("Dispatching event: $receivedObsidianResults")

@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import me.cpele.smalldata.core.Obsidian
+import me.cpele.smalldata.core.ObsidianEffects
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -21,9 +21,9 @@ import javax.net.ssl.TrustManagerFactory
 private const val API_KEY = "74b58c6979aff83c31ae20926bd823bbd8207bdf6d58ff7fa0437069ebab2bd0"
 private const val BASE_URL = "https://127.0.0.1:27124"
 
-class RestObsidian(private val json: Json) : Obsidian {
+class RestObsidianEffects(private val json: Json) : ObsidianEffects {
 
-    override suspend fun notes(query: String): List<Obsidian.Finding> {
+    override suspend fun notes(query: String): List<ObsidianEffects.Finding> {
         val request =
             withContext(Dispatchers.Default) {
                 val encodedQuery = URLEncoder.encode(query, Charsets.UTF_8)
@@ -67,11 +67,11 @@ class RestObsidian(private val json: Json) : Obsidian {
     }
 
     @Serializable
-    private data class Finding(private val filename: String) : Obsidian.Finding {
+    private data class Finding(private val filename: String) : ObsidianEffects.Finding {
         override val label: String = filename
     }
 
-    override suspend fun auth(): Obsidian.Details {
+    override suspend fun auth(): ObsidianEffects.Details {
         val sslCtx = buildSslContext()
         val client = HttpClient.newBuilder().sslContext(sslCtx).build()
         val authUri = URI(BASE_URL)
@@ -107,9 +107,9 @@ class RestObsidian(private val json: Json) : Obsidian {
         override val versions: Versions,
         override val service: String,
         override val authenticated: Boolean
-    ) : Obsidian.Details {
+    ) : ObsidianEffects.Details {
         @Serializable
         data class Versions(override val obsidian: String, override val self: String) :
-            Obsidian.Details.Versions
+            ObsidianEffects.Details.Versions
     }
 }

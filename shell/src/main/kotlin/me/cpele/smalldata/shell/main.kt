@@ -139,11 +139,11 @@ fun main() = application {
 
 fun makeJson() = Json { ignoreUnknownKeys = true }
 
-fun makeObsidian(json: Json): Obsidian = run {
+fun makeObsidian(json: Json): ObsidianEffects = run {
     val fakeObsidianStr = System.getenv("FAKE_OBSIDIAN")
     if (fakeObsidianStr.isNullOrBlank()) {
-        RestObsidian(json)
+        RestObsidianEffects(json)
     } else {
-        FakeObsidian
+        FakeObsidianEffects
     }
 }

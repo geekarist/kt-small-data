@@ -1,11 +1,11 @@
 package me.cpele.smalldata.shell
 
-import me.cpele.smalldata.core.Obsidian
+import me.cpele.smalldata.core.ObsidianEffects
 
-object FakeObsidian : Obsidian {
-    override suspend fun notes(query: String): List<Obsidian.Finding> =
+object FakeObsidianEffects : ObsidianEffects {
+    override suspend fun notes(query: String): List<ObsidianEffects.Finding> =
         (1..10).map { num ->
-            object : Obsidian.Finding {
+            object : ObsidianEffects.Finding {
                 override val label: String = "Note n°$num: $query"
             }
         }
@@ -28,8 +28,8 @@ object FakeObsidian : Obsidian {
         override val versions: Versions,
         override val service: String,
         override val authenticated: Boolean
-    ) : Obsidian.Details {
+    ) : ObsidianEffects.Details {
         data class Versions(override val obsidian: String, override val self: String) :
-            Obsidian.Details.Versions
+            ObsidianEffects.Details.Versions
     }
 }
