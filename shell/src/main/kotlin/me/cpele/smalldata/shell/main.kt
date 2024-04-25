@@ -121,8 +121,9 @@ fun main() = application {
                 },
                 update = { msg: App.Event, model: App.Model ->
                     val obsidian = makeObsidian(makeJson())
+                    val google = makeGoogleEffects()
                     val logger = Logger.getLogger(App::class.simpleName)
-                    val context = App.Context(obsidian, logger)
+                    val context = App.Context(obsidian, logger, google)
                     val (newModel, effect) = with(context) { App.update(model, msg) }
                     newModel to effect
                 },
@@ -136,6 +137,8 @@ fun main() = application {
         }
     }
 }
+
+fun makeGoogleEffects(): GoogleEffects = RestGoogleEffects()
 
 fun makeJson() = Json { ignoreUnknownKeys = true }
 
