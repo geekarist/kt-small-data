@@ -24,6 +24,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(project(":core"))
     implementation("org.oolong-kt:oolong:2.1.1")
+    implementation("com.google.apis:google-api-services-customsearch:v1-rev20240417-2.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }
