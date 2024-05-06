@@ -133,5 +133,5 @@ private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
             logger.info("Found ${results.size} web results: $results")
             TODO("Google search implementation TBD")
         }
-        dispatch(Event.GoogleSearch.Launched(job = obsidianJob))
+        dispatch(Event.GoogleSearch.Launched(job = googleJob))
     }
