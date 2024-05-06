@@ -1,7 +1,7 @@
 package me.cpele.smalldata.core
 
 interface GoogleEffects {
-    suspend fun search(query: String): List<Findings>
+    suspend fun search(query: String): List<Finding>
 
-    data class Findings(val label: String)
+    data class Finding(val label: String)
 }

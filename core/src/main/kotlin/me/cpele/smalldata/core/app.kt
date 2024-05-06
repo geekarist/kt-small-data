@@ -47,6 +47,8 @@ object App {
 
         sealed interface GoogleSearch : Event {
             data class Launched(val job: Job) : GoogleSearch
+
+            data class ReceivedResults(val results: List<GoogleEffects.Finding>) : GoogleSearch
         }
     }
 
@@ -100,12 +102,36 @@ fun App.update(model: Model, event: Event): Change<Model, Event> =
             Change(model.copy(obsidian = model.obsidian.copy(backend = event.auth)))
         is Event.ObsidianSearch.Launched ->
             Change(model.copy(obsidian = model.obsidian.copy(searchJob = event.job)))
-        is Event.ObsidianSearch.ReceivedResults ->
-            Change(model.copy(results = event.results.map { finding -> finding.label }))
+        is Event.ObsidianSearch.ReceivedResults -> changeOnObsidianSearchResults(model, event)
         is Event.ObsidianSearch.OpenFileRequested -> Change(model) { obsidian.open(event.path) }
         is Event.GoogleSearch.Launched ->
             Change(model.copy(google = model.google.copy(searchJob = event.job)))
+        is Event.GoogleSearch.ReceivedResults -> changeOnGoogleSearchResults(model, event)
     }
+
+private fun changeOnObsidianSearchResults(
+    model: Model,
+    event: Event.ObsidianSearch.ReceivedResults
+): Change<Model, Event> = run {
+    val newResultSet = event.results.map { it.label }
+    val currentResultSet = model.results?.toSet()
+    val updatedResultSet =
+        currentResultSet?.let { actualCurrentResultSet -> actualCurrentResultSet + newResultSet }
+    val updatedResultList = updatedResultSet?.toList()
+    Change(model.copy(results = updatedResultList))
+}
+
+private fun changeOnGoogleSearchResults(
+    model: Model,
+    event: Event.GoogleSearch.ReceivedResults
+): Change<Model, Event> = run {
+    val newResultSet = event.results.map { it.label }
+    val currentResultSet = model.results?.toSet()
+    val updatedResultSet =
+        currentResultSet?.let { actualCurrentResultSet -> actualCurrentResultSet + newResultSet }
+    val updatedResultList = updatedResultSet?.toList()
+    Change(model.copy(results = updatedResultList))
+}
 
 context(App.Context)
 private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
@@ -118,7 +144,7 @@ private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
             val results: List<ObsidianEffects.Finding> = obsidian.notes(event.query)
             logger.info("Found ${results.size} Obsidian results: $results")
             val receivedObsidianResults: Event = Event.ObsidianSearch.ReceivedResults(results)
-            logger.info("\"Debouncing\" for 1 sec")
+            logger.info("\"Debouncing\" Obsidian results for 1 sec")
             delay(1.seconds) // Kind of debounce
             logger.info("Dispatching event: $receivedObsidianResults")
             dispatch(receivedObsidianResults)
@@ -129,9 +155,13 @@ private fun updateOnQueryChanged(model: Model, event: Event.QueryChanged) =
         val googleJob = launch {
             logger.info("Google search job was launched")
             logger.info("Searching web for query: ${event.query}")
-            val results: List<GoogleEffects.Findings> = google.search(event.query)
+            val results: List<GoogleEffects.Finding> = google.search(event.query)
             logger.info("Found ${results.size} web results: $results")
-            TODO("Google search implementation TBD")
+            val receivedGoogleResults: Event = Event.GoogleSearch.ReceivedResults(results)
+            logger.info("\"Debouncing\" Google results for 1 sec")
+            delay(1.seconds)
+            logger.info("Dispatching event: $receivedGoogleResults")
+            dispatch(receivedGoogleResults)
         }
         dispatch(Event.GoogleSearch.Launched(job = googleJob))
     }

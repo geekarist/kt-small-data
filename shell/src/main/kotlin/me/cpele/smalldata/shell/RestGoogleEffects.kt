@@ -1,7 +1,6 @@
 package me.cpele.smalldata.shell
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.customsearch.v1.CustomSearchAPI
 import me.cpele.smalldata.core.GoogleEffects
@@ -17,7 +16,7 @@ class RestGoogleEffects : GoogleEffects {
      * and
      * [API overview](https://developers.google.com/custom-search/v1/introduction/?apix=true#api_overview)
      */
-    override suspend fun search(query: String): List<GoogleEffects.Findings> {
+    override suspend fun search(query: String): List<GoogleEffects.Finding> {
         val transport = GoogleNetHttpTransport.newTrustedTransport()
         val jsonFactory = GsonFactory.builder().build()
         val reqInit = null
@@ -25,6 +24,6 @@ class RestGoogleEffects : GoogleEffects {
         val engine = api.cse()
         val response = engine.list().setCx("7535d0d5996bf4a3c").setKey(apiKey).setQ(query).execute()
         val items = response.items
-        return items.map { GoogleEffects.Findings(label = it.title) }
+        return items.map { GoogleEffects.Finding(label = it.title) }
     }
 }
